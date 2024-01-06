@@ -3,7 +3,9 @@ import threading
 import tkinter as tk
 from googletrans import Translator
 import time
-
+from tkinter import filedialog
+from docx import Document
+from reportlab.pdfgen import canvas
 
 class SpeechTranslatorApp:
     def __init__(self, master):
@@ -23,6 +25,9 @@ class SpeechTranslatorApp:
 
         self.stop_button = tk.Button(master, text="Stop Listening", command=self.stop_listening)
         self.stop_button.pack()
+
+        self.save_button = tk.Button(master, text="Save Translations", command=self.save_translations)
+        self.save_button.pack()
 
         self.is_listening = False
 
@@ -56,6 +61,36 @@ class SpeechTranslatorApp:
     def update_text_output(self, text):
         self.text_output.delete(1.0, tk.END)
         self.text_output.insert(tk.END, text)
+
+    def save_translations(self):
+        file_path = filedialog.asksaveasfilename(defaultextension=".txt",
+                                                   filetypes=[("Text files", "*.txt"),
+                                                              ("Word files", "*.docx"),
+                                                              ("PDF files", "*.pdf"),
+                                                              ("All files", "*.*")])
+        if file_path:
+            #Determine  the file format based on the chosen file extension
+            file_format = file_path.split(".")[-1]
+            with open(file_path, 'w', encoding='utf-8') as file:
+                if file_format == "txt":
+                    file.write("\n".join(self.translated_speech))
+                elif file_format =="docx":
+                    self.save_as_docx(file_path)
+                elif file_format =="pdf":
+                    self.save_as_pdf(file_path)
+
+    def save_as_docx(self, file_path):
+        document = Document()
+        for translation in self.translated_speech:
+            document.add_paragraph(translation)
+        document.save(file_path) 
+
+    def save_as_pdf(self, file_path):
+        c = canvas.Canvas(file_path)
+        for translation in self.translated_speech:
+            c.drawString(100, 100, translation)
+            c.showPage()
+        c.save()           
 
 
 if __name__ == "__main__":
